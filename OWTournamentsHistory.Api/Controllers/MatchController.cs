@@ -145,7 +145,7 @@ namespace OWTournamentsHistory.Api.Controllers
                             Team2CaptainName = node.SelectSingleNode("td[7]").InnerText.Replace(" ", "").Replace(Environment.NewLine, ""),
                             ScoreTeam1 = int.Parse(node.SelectSingleNode("td[9]").InnerText), 
                             ScoreTeam2 = int.Parse(node.SelectSingleNode("td[10]").InnerText),
-                            Closeness = NullableExtensions.ParseTo<decimal>(node.SelectSingleNode("td[12]").InnerText)
+                            Closeness = node.SelectSingleNode("td[12]").InnerText.ParseTo<decimal>()
                         })
                     .GroupBy(m => m.ExternalId)
                     .Select(m => m.First())

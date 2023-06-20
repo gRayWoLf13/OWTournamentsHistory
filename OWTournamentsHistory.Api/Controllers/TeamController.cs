@@ -157,14 +157,14 @@ namespace OWTournamentsHistory.Api.Controllers
                         MatchesPlayed = int.Parse(node.SelectSingleNode("td[14]").InnerText),
                         MapsWon = int.Parse(node.SelectSingleNode("td[15]").InnerText),
                         MapsPlayed = int.Parse(node.SelectSingleNode("td[16]").InnerText),
-                        AverageMatchesCloseScore = NullableExtensions.ParseTo<decimal>(node.SelectSingleNode("td[19]").InnerText),
+                        AverageMatchesCloseScore = node.SelectSingleNode("td[19]").InnerText.ParseTo<decimal>(),
 
                         //Player fields
                         PlayerId = playerIdByBattleTags.Single(pair => pair.Name == node.SelectSingleNode("td[6]").InnerText.Replace(" ", "").Replace(Environment.NewLine, "").ToLowerInvariant()).ExternalId,
                         PlayerBattleTag = node.SelectSingleNode("td[6]").InnerText.Replace(" ", "").Replace(Environment.NewLine, ""),
                         TeamPlayerRole = ParseRole(node.SelectSingleNode("td[7]").InnerText),
-                        Weight = NullableExtensions.ParseTo<decimal>(node.SelectSingleNode("td[9]").InnerText),
-                        Division = NullableExtensions.ParseTo<int>(node.SelectSingleNode("td[11]").InnerText),
+                        Weight = node.SelectSingleNode("td[9]").InnerText.ParseTo<decimal>(),
+                        Division = node.SelectSingleNode("td[11]").InnerText.ParseTo<int>(),
                         DisplayWeight = node.SelectSingleNode("td[10]").InnerText,
                         PlayerSubRole = ParseSubRole(node.SelectSingleNode("td[12]").InnerText),
                         IsNewPlayer = node.SelectSingleNode("td[22]").InnerText == "1",

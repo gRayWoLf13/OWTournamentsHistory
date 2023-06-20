@@ -14,7 +14,7 @@
         //    return method == null ? throw new NotSupportedException() : (T?)method.Invoke(null, new[] { value });
         //}
 
-        public static T? ParseTo<T>(string value)
+        public static T? ParseTo<T>(this string value)
           where T : struct
         {
             if (string.IsNullOrEmpty(value))
