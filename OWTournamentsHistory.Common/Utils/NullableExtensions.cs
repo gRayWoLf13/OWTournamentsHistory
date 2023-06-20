@@ -4,7 +4,7 @@ namespace OWTournamentsHistory.Common.Utils
 {
     public static class NullableExtensions
     {
-        static T? ParseTo<T>(this string value)
+        public static T? ParseTo<T>(this string value)
           where T : struct
         {
             if (string.IsNullOrEmpty(value))
