@@ -2,7 +2,7 @@
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OWTournamentsHistory.Api.Utils;
+using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model;
 using OWTournamentsHistory.DataAccess.Contract;
 using System.Text;

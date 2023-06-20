@@ -1,6 +1,6 @@
-﻿namespace OWTournamentsHistory.Api.Utils
+﻿namespace OWTournamentsHistory.Common.Utils
 {
-    internal static class NameExtensions
+    public static class NameExtensions
     {
         public static string GetName(string battleTag) =>
             battleTag.Contains('#') ? battleTag[0..battleTag.IndexOf("#")] : battleTag;

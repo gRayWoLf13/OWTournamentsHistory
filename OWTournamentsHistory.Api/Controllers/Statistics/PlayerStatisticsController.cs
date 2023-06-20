@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OWTournamentsHistory.Api.Utils;
+using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model.PlayerStatistics;
 using OWTournamentsHistory.Contract.Model.Type;
 using OWTournamentsHistory.DataAccess.Contract;

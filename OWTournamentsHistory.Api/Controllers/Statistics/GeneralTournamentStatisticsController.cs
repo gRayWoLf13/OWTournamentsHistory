@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using OWTournamentsHistory.Api.Utils;
+using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model.GeneralTournamentStatistics;
 using OWTournamentsHistory.Contract.Model.Type;
 using OWTournamentsHistory.DataAccess.Model;
