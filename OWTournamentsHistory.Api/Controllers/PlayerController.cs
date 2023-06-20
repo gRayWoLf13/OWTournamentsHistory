@@ -108,7 +108,7 @@ namespace OWTournamentsHistory.Api.Controllers
 
             try
             {
-                await _playerRepository.RemoveAsync(new() { ExternalId = id }, cancellationToken);
+                await _playerRepository.RemoveAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (Exception ex)

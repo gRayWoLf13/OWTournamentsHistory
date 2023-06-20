@@ -2,6 +2,7 @@
 using MongoDB.Driver;
 using OWTournamentsHistory.DataAccess.Contract;
 using OWTournamentsHistory.DataAccess.Model;
+using SharpCompress.Common;
 
 namespace OWTournamentsHistory.DataAccess.Implementation.Base
 {
@@ -28,7 +29,8 @@ namespace OWTournamentsHistory.DataAccess.Implementation.Base
 
         public virtual async Task RemoveAsync(T entry, CancellationToken cancellationToken = default) =>
             await _entries.DeleteOneAsync(CreateFilterByIdDefinition(entry), cancellationToken);
-
+        public async Task RemoveAsync(long entryId, CancellationToken cancellationToken = default) =>
+            await _entries.DeleteOneAsync(CreateFilterByIdDefinition(entryId), cancellationToken);
         public virtual async Task RemoveRangeAsync(IReadOnlyCollection<T> entries, CancellationToken cancellationToken = default) =>
             await _entries.DeleteManyAsync(CreateFilterByIdDefinition(entries), cancellationToken);
 
@@ -77,6 +79,9 @@ namespace OWTournamentsHistory.DataAccess.Implementation.Base
 
         protected FilterDefinition<T> CreateFilterByIdDefinition(T entry) =>
             Builders<T>.Filter.Eq(e => e.ExternalId, entry.ExternalId);
+
+        protected FilterDefinition<T> CreateFilterByIdDefinition(long entryId) =>
+            Builders<T>.Filter.Eq(e => e.ExternalId, entryId);
 
         protected FilterDefinition<T> CreateFilterByIdDefinition(IReadOnlyCollection<T> entries) =>
             Builders<T>.Filter.In(e => e.ExternalId, entries.Select(x => x.ExternalId));

@@ -4,8 +4,8 @@ namespace OWTournamentsHistory.Contract.Model
 {
     public class TeamPlayerInfo
     {
-        public string Name { get; set; }
-        public string BattleTag { get; set; }
+        public required string Name { get; set; }
+        public required string BattleTag { get; set; }
         public PlayerRole Role { get; set; }
         public decimal? Weight { get; set; }
         public int? Division { get; set; }

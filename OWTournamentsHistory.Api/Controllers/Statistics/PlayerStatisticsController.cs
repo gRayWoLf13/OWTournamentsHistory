@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OWTournamentsHistory.Api.Utils;
-using OWTournamentsHistory.Contract.Model.PlayerHistory;
+using OWTournamentsHistory.Contract.Model.PlayerStatistics;
 using OWTournamentsHistory.Contract.Model.Type;
 using OWTournamentsHistory.DataAccess.Contract;
 using OWTournamentsHistory.DataAccess.Model;
 using OWTournamentsHistory.DataAccess.Model.Type;
+using System.Diagnostics;
 
-namespace OWTournamentsHistory.Api.Controllers
+namespace OWTournamentsHistory.Api.Controllers.Statistics
 {
     [ApiController]
     [Route("[controller]")]
@@ -15,7 +16,7 @@ namespace OWTournamentsHistory.Api.Controllers
 #if DEBUG
     [AllowAnonymous]
 #endif
-    public class PlayerHistoryController : Controller
+    public partial class StatisticsController : Controller
     {
         private readonly TeamPlayerRole[] _possiblePlayerRoles = new[] { TeamPlayerRole.Tank, TeamPlayerRole.Dps, TeamPlayerRole.Support };
 
@@ -23,31 +24,36 @@ namespace OWTournamentsHistory.Api.Controllers
         private readonly IPlayerRepository _playerRepository;
         private readonly ITeamRepository _teamRepository;
         private readonly IPlayerOpponentsRepository _playerOpponentsRepository;
-        private readonly ILogger<PlayerHistoryController> _logger;
+        private readonly IPlayerDuosRepository _playerDuosRepository;
+        private readonly ILogger<StatisticsController> _logger;
 
-        public PlayerHistoryController(
+        public StatisticsController(
             IMatchRepository matchRepository,
             IPlayerRepository playerRepository,
             ITeamRepository teamRepository,
             IPlayerOpponentsRepository playerOpponentsRepository,
-            ILogger<PlayerHistoryController> logger)
+            IPlayerDuosRepository playerDuosRepository,
+            ILogger<StatisticsController> logger)
         {
             _matchRepository = matchRepository;
             _playerRepository = playerRepository;
             _teamRepository = teamRepository;
             _playerOpponentsRepository = playerOpponentsRepository;
+            _playerDuosRepository = playerDuosRepository;
             _logger = logger;
         }
 
         [HttpGet]
-        [Route("{name}")]
+        [Route("/player/{name}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PlayerHistoryInfo>> Get(string name, CancellationToken cancellationToken)
+        public async Task<ActionResult<PlayerStatisticsInfo>> GetPlayerStatistics(string name, CancellationToken cancellationToken)
         {
             try
             {
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
                 var player = await _playerRepository.FindPlayer(name);
                 if (player == null)
                 {
@@ -64,17 +70,21 @@ namespace OWTournamentsHistory.Api.Controllers
                     .GroupBy(match => match.TournamentNumber)
                     .Where(matches => matches.Sum(match => GetNormalizedMatchScore(match, playerCaptainsByTournamentNumber[matches.Key]).Score) == 0)
                     .Count();
-                var globalWinrate = playerMatches
+                var averagePlayerWinrate = playerMatches
                     .Sum(match => GetNormalizedMatchScore(match, playerCaptainsByTournamentNumber[match.TournamentNumber]).Score)
-                    / (decimal)playerMatches.Sum(match => match.ScoreTeam1 + match.ScoreTeam2)
-                    * 100;
+                    / (decimal)playerMatches.Sum(match => match.ScoreTeam1 + match.ScoreTeam2);
 
                 var bestResult = playerTeams.OrderBy(team => team.Place).First();
                 var bestResultPlace = bestResult.Place;
                 var bestResultTournamentNumber = bestResult.TournamentNumber;
                 var bestResultCaptain = bestResult.CaptainName;
 
-                var averageCloseness = playerTeams.Average(team => team.AverageMatchesCloseScore);
+                var playerTeamsWithCloseness = playerTeams.Where(team => team.AverageMatchesCloseScore is not null).ToArray();
+#pragma warning disable CS8629 // Nullable value type may be null.
+                var averagePlayerCloseness = playerTeamsWithCloseness.Any()
+                    ? playerTeamsWithCloseness.Average(team => team.AverageMatchesCloseScore.Value)
+                    : 0;
+#pragma warning restore CS8629 // Nullable value type may be null.
                 var mapsWon = playerMatches.Sum(match => GetNormalizedMatchScore(match, playerCaptainsByTournamentNumber[match.TournamentNumber]).Score);
                 var mapsPlayed = playerTeams.Sum(team => team.MapsPlayed);
                 var averagePlace = (int)Math.Round(playerTeams.Average(team => team.Place), 0);
@@ -114,8 +124,7 @@ namespace OWTournamentsHistory.Api.Controllers
 
                     var roleAverageWinrate = playerRoleMatches
                         .GroupBy(match => match.TournamentNumber)
-                        .Average(matches => matches.Sum(m => GetNormalizedMatchScore(m, playerCaptainsByTournamentNumber[matches.Key]).Score) / (decimal)matches.Sum(m => m.ScoreTeam1 + m.ScoreTeam2))
-                        * 100;
+                        .Average(matches => matches.Sum(m => GetNormalizedMatchScore(m, playerCaptainsByTournamentNumber[matches.Key]).Score) / (decimal)matches.Sum(m => m.ScoreTeam1 + m.ScoreTeam2));
 
                     var roleLastTournamentNumber = teamsOnRole
                         .Max(team => team.TournamentNumber);
@@ -136,7 +145,7 @@ namespace OWTournamentsHistory.Api.Controllers
                     });
                 }
 
-                var teamInfos = new List<TeamInfo>();
+                var teamInfos = new List<PlayerTeamInfo>();
                 foreach (var team in playerTeams)
                 {
                     var matchesPlayedByTeam = playerMatches
@@ -168,7 +177,7 @@ namespace OWTournamentsHistory.Api.Controllers
                         });
                     }
 
-                    teamInfos.Add(new TeamInfo
+                    teamInfos.Add(new PlayerTeamInfo
                     {
                         CaptainName = team.CaptainName,
                         TournamentNumber = team.TournamentNumber,
@@ -184,23 +193,60 @@ namespace OWTournamentsHistory.Api.Controllers
                 }
 
                 //charts data calculation
-                var tankPoints = new Point2D[playerTeams.Count];
-                var dpsPoints = new Point2D[playerTeams.Count];
-                var supportPoints = new Point2D[playerTeams.Count];
-                var placePoints = new Point2D[playerTeams.Count];
+                var tankPoints = new Point2D<decimal?>[playerTeams.Count];
+                var dpsPoints = new Point2D<decimal?>[playerTeams.Count];
+                var supportPoints = new Point2D<decimal?>[playerTeams.Count];
+                var placePoints = new Point2D<decimal?>[playerTeams.Count];
                 var counter = 0;
-                foreach(var team in playerTeams)
+                foreach (var team in playerTeams)
                 {
                     var teamPlayerInfo = team.Players.Single(player => NameExtensions.EqualsIgnoreCase(player.Name, name));
-                    tankPoints[counter] = new Point2D { X = team.TournamentNumber, Y = teamPlayerInfo.Role == TeamPlayerRole.Tank ? teamPlayerInfo.Weight : null };
-                    dpsPoints[counter] = new Point2D { X = team.TournamentNumber, Y = teamPlayerInfo.Role == TeamPlayerRole.Dps ? teamPlayerInfo.Weight : null };
-                    supportPoints[counter] = new Point2D { X = team.TournamentNumber, Y = teamPlayerInfo.Role == TeamPlayerRole.Support ? teamPlayerInfo.Weight : null };
-                    placePoints[counter++] = new Point2D { X = team.TournamentNumber, Y = team.Place };
+                    tankPoints[counter] = new Point2D<decimal?> { X = team.TournamentNumber, Y = teamPlayerInfo.Role == TeamPlayerRole.Tank ? teamPlayerInfo.Weight : null };
+                    dpsPoints[counter] = new Point2D<decimal?> { X = team.TournamentNumber, Y = teamPlayerInfo.Role == TeamPlayerRole.Dps ? teamPlayerInfo.Weight : null };
+                    supportPoints[counter] = new Point2D<decimal?> { X = team.TournamentNumber, Y = teamPlayerInfo.Role == TeamPlayerRole.Support ? teamPlayerInfo.Weight : null };
+                    placePoints[counter++] = new Point2D<decimal?> { X = team.TournamentNumber, Y = team.Place };
                 }
 
-                var standardDeviation = new List<Point2DWithLabel>();
-                //TODO
+                var standardDeviation = new List<Point2DWithLabel<decimal>>();
 
+                var allTeams = await _teamRepository.GetAsync();
+                var allTeamPlayers = allTeams.SelectMany(team => team.Players.Select(p => new { Player = p, team.MapsWon, team.MapsPlayed, team.AverageMatchesCloseScore }).ToArray()).ToArray();
+                var averageWinrate = allTeamPlayers.Average(player => player.MapsWon / (decimal)player.MapsPlayed);
+                var matchesWithCloseness = allTeamPlayers.Where(player => player.AverageMatchesCloseScore is not null).ToArray();
+                var averageCloseness = matchesWithCloseness.Any()
+                    ? matchesWithCloseness.Average(player => player.AverageMatchesCloseScore)
+                    : 0;
+
+                var tournamentsTotal = allTeams
+                    .Select(team => team.TournamentNumber)
+                    .Distinct()
+                    .Count();
+
+                var averageTournamentsPlayed = allTeamPlayers
+                    .GroupBy(p => p.Player.Name)
+                    .Average(gr => (decimal)gr.Count())
+                     / tournamentsTotal;
+
+                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Winrate", X = averagePlayerWinrate, Y = averageWinrate });
+                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Closeness", X = averagePlayerCloseness, Y = averageCloseness });
+                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Tournaments played", X = tournamentsPlayed / (decimal)tournamentsTotal, Y = averageTournamentsPlayed });
+
+                foreach (var role in _possiblePlayerRoles)
+                {
+                    var averageRoleWinrate = allTeamPlayers
+                        .Where(player => player.Player.Role == role)
+                        .Average(player => player.MapsWon / (decimal)player.MapsPlayed);
+
+                    var teamsOnRole = playerTeams
+                        .Where(team => team.Players.Single(player => NameExtensions.EqualsIgnoreCase(player.Name, playerName)).Role == role)
+                        .ToArray();
+
+                    var roleWinrate = teamsOnRole.Any()
+                        ? teamsOnRole.Average(player => player.MapsWon / (decimal)player.MapsPlayed)
+                        : 0;
+
+                    standardDeviation.Add(new Point2DWithLabel<decimal> { Label = role.ToString(), X = roleWinrate, Y = averageRoleWinrate });
+                }
 
 
                 //combinations data calculation
@@ -220,7 +266,7 @@ namespace OWTournamentsHistory.Api.Controllers
 
                 var lostAgainst = lostAgainst1.Union(lostAgainst2).OrderByDescending(win => win.MapsWon).Take(10).ToArray();
 
-                var info = new PlayerHistoryInfo
+                var info = new PlayerStatisticsInfo
                 {
                     Name = player.Name,
                     BattleTags = player.BattleTags,
@@ -228,11 +274,11 @@ namespace OWTournamentsHistory.Api.Controllers
                     TournamentsPlayed = tournamentsPlayed,
                     TournamentsWon = tournamentsWon,
                     TournamentsWith0Wins = tournamentsWith0Wins,
-                    GlobalWinRate = globalWinrate,
+                    GlobalWinRate = averagePlayerWinrate,
                     BestResultTournamentNumber = bestResultTournamentNumber,
                     BestResultCaptainName = bestResultCaptain,
                     BestResultPlace = bestResultPlace,
-                    AverageCloseness = averageCloseness,
+                    AverageCloseness = averagePlayerCloseness,
                     MapsWon = mapsWon,
                     MapsPlayed = mapsPlayed,
                     AveragePlace = averagePlace,
@@ -243,10 +289,12 @@ namespace OWTournamentsHistory.Api.Controllers
                     SupportPriceData = supportPoints,
                     PlaceData = placePoints,
                     StandardDeviation = standardDeviation,
-                    MostWinsAgainst = wonAgainst.Select(pp => new NameCount { Name = pp.Player2, Count = pp.MapsWon}).ToArray(),
-                    MostLossesAgainst = lostAgainst.Select(pp => new NameCount { Name = pp.Player1, Count = pp.MapsWon}).ToArray(),
+                    MostWinsAgainst = wonAgainst.Select(pp => new NameCount { Name = pp.Player2, Count = pp.MapsWon }).ToArray(),
+                    MostLossesAgainst = lostAgainst.Select(pp => new NameCount { Name = pp.Player1, Count = pp.MapsWon }).ToArray(),
                 };
 
+                stopwatch.Stop();
+                Debug.WriteLine(stopwatch.Elapsed);
                 return info;
 
             }
@@ -255,7 +303,6 @@ namespace OWTournamentsHistory.Api.Controllers
                 return WrapException(ex);
             }
         }
-
 
         private static ObjectResult WrapException(Exception ex)
             => new(ex.Message)

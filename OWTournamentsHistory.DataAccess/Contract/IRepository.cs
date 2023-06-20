@@ -7,6 +7,7 @@ namespace OWTournamentsHistory.DataAccess.Contract
     {
         Task<long> AddAsync(T entry, CancellationToken cancellationToken = default);
         Task RemoveAsync(T entry, CancellationToken cancellationToken = default);
+        Task RemoveAsync(long entryId, CancellationToken cancellationToken = default);
         Task AddRangeAsync(IReadOnlyCollection<T> entries, CancellationToken cancellationToken = default);
         Task RemoveRangeAsync(IReadOnlyCollection<T> entries, CancellationToken cancellationToken = default);
         Task UpdateAsync(T entry, CancellationToken cancellationToken = default);

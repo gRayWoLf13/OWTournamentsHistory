@@ -4,7 +4,7 @@ WORKDIR "/app"
 
 COPY "IdentityServer" "/app/IdentityServer"
 
-RUN dotnet restore "/app/IdentityServer/IdentityServer.csproj"
+RUN dotnet restore "/app/IdentityServer/IdentityServer.csproj" -v:minimal -warnaserror
 RUN dotnet build "/app/IdentityServer/IdentityServer.csproj" -c Release -o "/app/identity-server/build"
 RUN dotnet publish "/app/IdentityServer/IdentityServer.csproj" -c Release -o "/app/identity-server/publish" /p:UseAppHost=false
 
