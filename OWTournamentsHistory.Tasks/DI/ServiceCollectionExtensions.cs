@@ -12,6 +12,7 @@ namespace OWTournamentsHistory.Tasks.DI
             collection.AddScoped<CalculatePlayerCombinationsInvocable>();
             collection.AddScoped<ExportDatabaseToDropboxInvocable>();
             collection.AddScoped<TwitchApiTestInvocable>();
+            collection.AddScoped<CalculateGeneralTournamentStatsInvocable>();
         }
 
         public static void AddTaskListeners(this IServiceCollection collection)

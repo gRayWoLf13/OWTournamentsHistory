@@ -35,6 +35,7 @@ namespace OWTournamentsHistory.DataAccess.DI
             collection.AddScoped<IMatchRepository, MatchRepository>();
             collection.AddScoped<IPlayerDuosRepository, PlayerDuosRepository>();
             collection.AddScoped<IPlayerOpponentsRepository, PlayerOpponentsRepository>();
+            collection.AddScoped<IGeneralTournamentStatsRepository, GeneralTournamentStatsRepository>();
         }
 
         private static IMongoClient CreateSharedClient(string connectionString)

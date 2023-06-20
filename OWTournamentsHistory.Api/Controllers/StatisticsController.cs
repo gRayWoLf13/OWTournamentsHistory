@@ -1,14 +1,16 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OWTournamentsHistory.Common.Utils;
+using OWTournamentsHistory.Contract.Model.GeneralTournamentStatistics;
 using OWTournamentsHistory.Contract.Model.PlayerStatistics;
 using OWTournamentsHistory.Contract.Model.Type;
 using OWTournamentsHistory.DataAccess.Contract;
 using OWTournamentsHistory.DataAccess.Model;
 using OWTournamentsHistory.DataAccess.Model.Type;
 using System.Diagnostics;
+using Tournament = OWTournamentsHistory.Contract.Model.TournamentStatistics;
 
-namespace OWTournamentsHistory.Api.Controllers.Statistics
+namespace OWTournamentsHistory.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]
@@ -16,7 +18,7 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
 #if DEBUG
     [AllowAnonymous]
 #endif
-    public partial class StatisticsController : Controller
+    public class StatisticsController : Controller
     {
         private readonly TeamPlayerRole[] _possiblePlayerRoles = new[] { TeamPlayerRole.Tank, TeamPlayerRole.Dps, TeamPlayerRole.Support };
 
@@ -25,6 +27,7 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
         private readonly ITeamRepository _teamRepository;
         private readonly IPlayerOpponentsRepository _playerOpponentsRepository;
         private readonly IPlayerDuosRepository _playerDuosRepository;
+        private readonly IGeneralTournamentStatsRepository _generalTournamentStatsRepository;
         private readonly ILogger<StatisticsController> _logger;
 
         public StatisticsController(
@@ -33,6 +36,7 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
             ITeamRepository teamRepository,
             IPlayerOpponentsRepository playerOpponentsRepository,
             IPlayerDuosRepository playerDuosRepository,
+            IGeneralTournamentStatsRepository generalTournamentStatsRepository,
             ILogger<StatisticsController> logger)
         {
             _matchRepository = matchRepository;
@@ -40,11 +44,12 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
             _teamRepository = teamRepository;
             _playerOpponentsRepository = playerOpponentsRepository;
             _playerDuosRepository = playerDuosRepository;
+            _generalTournamentStatsRepository = generalTournamentStatsRepository;
             _logger = logger;
         }
 
         [HttpGet]
-        [Route("/player/{name}")]
+        [Route("Player/{name}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -183,7 +188,7 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
                         TournamentNumber = team.TournamentNumber,
                         Place = team.Place,
                         MapsWon = matchesPlayedByTeam
-                        .Sum(match => GetNormalizedMatchScore(match, playerCaptainsByTournamentNumber[match.TournamentNumber]).Score),
+                            .Sum(match => GetNormalizedMatchScore(match, playerCaptainsByTournamentNumber[match.TournamentNumber]).Score),
                         MapsPlayed = matchesPlayedByTeam.Sum(match => match.ScoreTeam1 + match.ScoreTeam2),
                         AverageMatchesCloseScore = team.AverageMatchesCloseScore,
                         MatchesPlayed = team.MatchesPlayed,
@@ -208,35 +213,14 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
                 }
 
                 var standardDeviation = new List<Point2DWithLabel<decimal>>();
+                var generalTournamentStats = await _generalTournamentStatsRepository.GetStats();
 
-                var allTeams = await _teamRepository.GetAsync();
-                var allTeamPlayers = allTeams.SelectMany(team => team.Players.Select(p => new { Player = p, team.MapsWon, team.MapsPlayed, team.AverageMatchesCloseScore }).ToArray()).ToArray();
-                var averageWinrate = allTeamPlayers.Average(player => player.MapsWon / (decimal)player.MapsPlayed);
-                var matchesWithCloseness = allTeamPlayers.Where(player => player.AverageMatchesCloseScore is not null).ToArray();
-                var averageCloseness = matchesWithCloseness.Any()
-                    ? matchesWithCloseness.Average(player => player.AverageMatchesCloseScore)
-                    : 0;
-
-                var tournamentsTotal = allTeams
-                    .Select(team => team.TournamentNumber)
-                    .Distinct()
-                    .Count();
-
-                var averageTournamentsPlayed = allTeamPlayers
-                    .GroupBy(p => p.Player.Name)
-                    .Average(gr => (decimal)gr.Count())
-                     / tournamentsTotal;
-
-                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Winrate", X = averagePlayerWinrate, Y = averageWinrate });
-                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Closeness", X = averagePlayerCloseness, Y = averageCloseness });
-                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Tournaments played", X = tournamentsPlayed / (decimal)tournamentsTotal, Y = averageTournamentsPlayed });
+                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Winrate", X = averagePlayerWinrate, Y = generalTournamentStats.AverageWinRate });
+                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Closeness", X = averagePlayerCloseness, Y = generalTournamentStats.StatsToTournaments.Average(item => item.Value.AverageCloseness) });
+                standardDeviation.Add(new Point2DWithLabel<decimal> { Label = "Tournaments played", X = tournamentsPlayed / (decimal)generalTournamentStats.TournamentsCount, Y = generalTournamentStats.AverageTournamentsPlayedPercentage });
 
                 foreach (var role in _possiblePlayerRoles)
                 {
-                    var averageRoleWinrate = allTeamPlayers
-                        .Where(player => player.Player.Role == role)
-                        .Average(player => player.MapsWon / (decimal)player.MapsPlayed);
-
                     var teamsOnRole = playerTeams
                         .Where(team => team.Players.Single(player => NameExtensions.EqualsIgnoreCase(player.Name, playerName)).Role == role)
                         .ToArray();
@@ -245,7 +229,7 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
                         ? teamsOnRole.Average(player => player.MapsWon / (decimal)player.MapsPlayed)
                         : 0;
 
-                    standardDeviation.Add(new Point2DWithLabel<decimal> { Label = role.ToString(), X = roleWinrate, Y = averageRoleWinrate });
+                    standardDeviation.Add(new Point2DWithLabel<decimal> { Label = role.ToString(), X = roleWinrate, Y = generalTournamentStats.RoleWinRates.Single(info => info.Role == role).AverageWinRate });
                 }
 
 
@@ -297,6 +281,168 @@ namespace OWTournamentsHistory.Api.Controllers.Statistics
                 Debug.WriteLine(stopwatch.Elapsed);
                 return info;
 
+            }
+            catch (Exception ex)
+            {
+                return WrapException(ex);
+            }
+        }
+
+        [HttpGet]
+        [Route("Tournaments")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<GeneralTournamentStatisticsInfo>> GetGeneralTournamentStatistics(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var generalTournamentStats = await _generalTournamentStatsRepository.GetStats();
+
+                var bestDuos =
+                    await _playerDuosRepository.GetSortedAsync(orderingKey: duo => duo.MapsWon, sortAscending: false, limit: 20);
+
+                var worstDuos =
+                    await _playerDuosRepository.GetByWinRate(sortAscending: true, limit: 20);
+
+                return new GeneralTournamentStatisticsInfo
+                {
+                    TournamentsCount = generalTournamentStats.TournamentsCount,
+                    TeamsCount = generalTournamentStats.StatsToTournaments.Sum(tournament => tournament.Value.TeamsCount),
+                    PlayersCount = generalTournamentStats.StatsToTournaments.Sum(tournament => tournament.Value.PlayersCount),
+                    MatchesCount = generalTournamentStats.StatsToTournaments.Sum(tournament => tournament.Value.MatchesCount),
+                    OWALsCount = generalTournamentStats.OWALsCount,
+                    ChampionsCount = generalTournamentStats.ChampionsCount,
+
+                    TopMapsWon = generalTournamentStats.TopPlayersByScore.Select(item => new Point2D<string> { X = item.Key, Y = item.Value }).ToArray(),
+                    TopChampions = generalTournamentStats.TopChampions.Select(item => new Point2DWithLabel<string> { X = item.Key, Label = string.Join(", ", item.Value.Roles.Distinct()), Y = item.Value.Roles.Length }).ToArray(),
+                    TopWinRate = generalTournamentStats.TopWinRate.Select(item => new Point2D<string> { X = item.Key, Y = item.Value }).ToArray(),
+                    Top0Wins = generalTournamentStats.Top0Wins.Select(item => new Point2DWithLabel<string> { X = item.Key, Label = string.Join(", ", item.Value.Roles.Distinct()), Y = item.Value.Roles.Length }).ToArray(),
+                    BestDuos = bestDuos.Select(duo => new Point2D<string> { X = $"{duo.Player1} - {duo.Player2}", Y = duo.MapsWon }).ToArray(),
+                    WorstDuos = worstDuos.Select(duo => new Point2D<string> { X = $"{duo.Player1} - {duo.Player2}", Y = duo.MapsWon / (decimal)duo.MapsPlayed }).ToArray(),
+
+                    AverageTankDivisionToTournament = generalTournamentStats.StatsToTournaments.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.AverageDivisionToRole.Single(role => role.Role == TeamPlayerRole.Tank).Division }).ToArray(),
+                    AverageDpsDivisionToTournament = generalTournamentStats.StatsToTournaments.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.AverageDivisionToRole.Single(role => role.Role == TeamPlayerRole.Dps).Division }).ToArray(),
+                    AverageSupportDivisionToTournament = generalTournamentStats.StatsToTournaments.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.AverageDivisionToRole.Single(role => role.Role == TeamPlayerRole.Support).Division }).ToArray(),
+
+                    AverageMatchClosenessToTournament = generalTournamentStats.StatsToTournaments.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.AverageCloseness }).ToArray(),
+                    AverageTeamWeightToTournament = generalTournamentStats.StatsToTournaments.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.AverageTeamWeight }).ToArray(),
+                    PlayersCountToTournament = generalTournamentStats.StatsToTournaments.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.PlayersCount }).ToArray(),
+
+                    TankPlayersToDivision = generalTournamentStats.PlayerRolesToDivisions.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.TanksCount }).ToArray(),
+                    DpsPlayersToDivision = generalTournamentStats.PlayerRolesToDivisions.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.DpsCount }).ToArray(),
+                    SupportPlayersToDivision = generalTournamentStats.PlayerRolesToDivisions.Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value.SupportsCount }).ToArray(),
+                };
+            }
+            catch (Exception ex)
+            {
+                return WrapException(ex);
+            }
+        }
+
+        [HttpGet]
+        [Route("Tournament/{number}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<Tournament.TournamentStatisticsInfo>> GetTournamentStatistics(int number, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var tournamentTeams = await _teamRepository.GetAsync(team => team.TournamentNumber == number);
+                var tournamentMatches = await _matchRepository.GetAsync(match => match.TournamentNumber == number);
+                var tournamentTeamPlayers = tournamentTeams.SelectMany(team => team.Players.Select(p => new { Player = p, p.IsNewPlayer, p.IsNewRole }).ToArray()).ToArray();
+
+                if (!tournamentTeams.Any() && !tournamentMatches.Any())
+                {
+                    return NotFound();
+                }
+
+                var topTeams = tournamentTeams
+                    .OrderBy(team => team.Place)
+                    .Select(team => new Tournament.TournamentTeamInfo { Place = team.Place, CaptainName = team.CaptainName })
+                    .Take(10)
+                    .ToArray();
+
+                var totalWinrate = tournamentTeams
+                    .Select(team => team.MapsWon / (decimal)team.MapsPlayed)
+                    .Average();
+
+                var totalTeamWeight = tournamentTeams
+                    .Average(team => team.Players.Average(player => player.Weight ?? 0));
+
+                var totalAverageMatchesCloseScore = tournamentTeams
+                    .Average(team => team.AverageMatchesCloseScore);
+
+                var winnerTeam = tournamentTeams.Single(team => team.Place == 1);
+                var winner = new Tournament.TeamStatistics
+                {
+                    WinRate = winnerTeam.MapsWon / (decimal)winnerTeam.MapsPlayed,
+                    TotalWinRate = totalWinrate,
+                    MatchesPlayed = winnerTeam.MatchesPlayed,
+                    TeamWeight = winnerTeam.Players.Average(p => p.Weight ?? 0),
+                    TotalTeamWeight = totalTeamWeight,
+                    AverageMatchesCloseScore = winnerTeam.AverageMatchesCloseScore,
+                    TotalAverageMatchesCloseScore = totalAverageMatchesCloseScore,
+                    Players = winnerTeam.Players.Select(player => new PlayerInTheTeamInfo
+                    {
+                        BattleTag = player.BattleTag,
+                        DisplayWeight = player.DisplayWeight,
+                        Division = player.Division,
+                        Name = player.Name,
+                        Role = (PlayerRole)player.Role,
+                        SubRole = (PlayerSubRole?)player.SubRole
+                    }).ToArray()
+                };
+
+                var generalTournamentStats = await _generalTournamentStatsRepository.GetStats();
+
+                var tournamentsTotal = generalTournamentStats.TournamentsCount;
+
+                var playersToDivisions = tournamentTeamPlayers
+                    .GroupBy(player => player.Player.Division)
+                    .Where(gr => gr.Key is not null)
+                    .Select(gr => new Point2D<decimal> { X = gr.Key ?? 0, Y = gr.Count() })
+                    .ToArray();
+
+                var globalPlayersToDivisions = generalTournamentStats.PlayersToDivisionsCount
+                    .Select(item => new Point2D<decimal> { X = int.Parse(item.Key), Y = item.Value })
+                    .ToArray();
+
+                var matchesCloseness = tournamentMatches
+                    .Select(match => match.Closeness == null ? (MatchCloseness?)null : (MatchCloseness)Math.Max(0, Math.Ceiling(match.Closeness.Value) - 1))
+                    .GroupBy(m => m)
+                    .Select(gr => new { gr.Key, Count = gr.Count() })
+                    .ToArray();
+
+                var globalMatchesCloseness = generalTournamentStats.MatchesClosenessCount
+                    .Select(gr => new { Key = (MatchCloseness)int.Parse(gr.Key), Count = gr.Value })
+                    .ToArray();
+
+                var matchesClosenessRelativeToAverage = matchesCloseness
+                    .Select(closeness => new Point2DWithLabel<decimal>
+                    {
+                        Label = closeness.Key?.ToString(),
+                        X = closeness?.Count ?? 0,
+                        Y = globalMatchesCloseness.Single(c => c.Key == closeness?.Key)?.Count / (decimal)tournamentsTotal
+                    })
+                    .ToArray();
+
+                return new Tournament.TournamentStatisticsInfo
+                {
+                    TournamentNumber = number,
+                    TeamsCount = tournamentTeams.Count,
+                    MatchesCount = tournamentMatches.Count,
+                    MapsPlayed = tournamentMatches.Sum(match => match.ScoreTeam1 + match.ScoreTeam2),
+                    PlayersCount = tournamentTeamPlayers.Length,
+                    NewPlayers = tournamentTeamPlayers.Count(player => player.IsNewPlayer),
+                    NewRolePlayers = tournamentTeamPlayers.Count(player => player.IsNewRole) - tournamentTeamPlayers.Count(player => player.IsNewPlayer),
+                    TopTeams = topTeams,
+                    WinnerTeam = winner,
+                    PlayersToDivisions = playersToDivisions,
+                    GlobalPlayersToDivisions = globalPlayersToDivisions,
+                    MatchesClosenessRelativeToAverage = matchesClosenessRelativeToAverage
+                };
             }
             catch (Exception ex)
             {

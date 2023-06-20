@@ -9,4 +9,5 @@ public class OWTournamentsHistoryDatabaseSettings
     public required string MatchesCollectionName { get; set; }
     public required string PlayerDuosCollectionName { get; set; }
     public required string PlayerOpponentsCollectionName { get; set; }
+    public required string GeneralTournamentStatsCollectionName { get; set; }
 }

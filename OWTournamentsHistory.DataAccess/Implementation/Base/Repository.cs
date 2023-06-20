@@ -77,15 +77,6 @@ namespace OWTournamentsHistory.DataAccess.Implementation.Base
             }
         }
 
-        protected FilterDefinition<T> CreateFilterByIdDefinition(T entry) =>
-            Builders<T>.Filter.Eq(e => e.ExternalId, entry.ExternalId);
-
-        protected FilterDefinition<T> CreateFilterByIdDefinition(long entryId) =>
-            Builders<T>.Filter.Eq(e => e.ExternalId, entryId);
-
-        protected FilterDefinition<T> CreateFilterByIdDefinition(IReadOnlyCollection<T> entries) =>
-            Builders<T>.Filter.In(e => e.ExternalId, entries.Select(x => x.ExternalId));
-
         protected abstract UpdateDefinition<T> CreateFullUpdateDefinition(T entry);
     }
 }
