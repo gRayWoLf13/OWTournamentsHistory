@@ -183,8 +183,6 @@ namespace OWTournamentsHistory.Tasks
                 TopChampions = topChampions,
                 TopPlayersByScore = topPlayersByScore.ToDictionary(item => item.PlayerName, item => item.Score),
                 TopWinRate = topWinRate.ToDictionary(item => item.PlayerName, item => item.WinRate),
-
-                LastModified = DateTimeOffset.UtcNow
             };
 
             await _generalTournamentStatsRepository.UpdateStats(generalTournamentStats);

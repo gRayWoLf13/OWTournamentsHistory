@@ -1,6 +1,4 @@
-﻿using OWTournamentsHistory.DataAccess.Model.Type;
-
-namespace OWTournamentsHistory.DataAccess.Model.Statistics
+﻿namespace OWTournamentsHistory.DataAccess.Model.Statistics
 {
     public class GeneralTournamentStats : MongoCollectionEntry
     {
@@ -22,26 +20,4 @@ namespace OWTournamentsHistory.DataAccess.Model.Statistics
         public required IDictionary<string, GeneralTournamentChampionInfo> Top0Wins { get; set; }
         public required IDictionary<string, GeneralRolesToDivisionsInfo> PlayerRolesToDivisions { get; set; }
     }
-
-    public class GeneralRoleWinRateInfo
-    {
-        public TeamPlayerRole Role { get; set; }
-        public decimal AverageWinRate { get; set; }
-    }
-
-    public class GeneralTournamentChampionInfo
-    {
-        public int ChampionsCount { get; set; }
-        public required TeamPlayerRole[] Roles { get; set; }
-    }
-
-    public class GeneralRolesToDivisionsInfo
-    {
-        public int TanksCount { get; set; }
-        public int DpsCount { get; set; }
-        public int SupportsCount { get; set; }
-        public int FlexCount { get; set; }
-
-    }
-
 }
