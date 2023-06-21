@@ -2,7 +2,7 @@
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OWTournamentsHistory.Api.Utils;
+using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model;
 using OWTournamentsHistory.DataAccess.Contract;
 using System.Text;
@@ -108,7 +108,7 @@ namespace OWTournamentsHistory.Api.Controllers
 
             try
             {
-                await _matchRepository.RemoveAsync(new() { ExternalId = id }, cancellationToken);
+                await _matchRepository.RemoveAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (Exception ex)
@@ -145,7 +145,7 @@ namespace OWTournamentsHistory.Api.Controllers
                             Team2CaptainName = node.SelectSingleNode("td[7]").InnerText.Replace(" ", "").Replace(Environment.NewLine, ""),
                             ScoreTeam1 = int.Parse(node.SelectSingleNode("td[9]").InnerText), 
                             ScoreTeam2 = int.Parse(node.SelectSingleNode("td[10]").InnerText),
-                            Closeness = NullableExtensions.ParseTo<decimal?>(node.SelectSingleNode("td[12]").InnerText)
+                            Closeness = node.SelectSingleNode("td[12]").InnerText.ParseTo<decimal>()
                         })
                     .GroupBy(m => m.ExternalId)
                     .Select(m => m.First())

@@ -34,5 +34,14 @@ namespace OWTournamentsHistory.Api.Controllers
             return Ok(taskId);
         }
 
+        [HttpPost]
+        [Route("TournamentStats")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CalculateGeneralTournamentStats()
+        {
+            var taskId = _queue.QueueInvocable<CalculateGeneralTournamentStatsInvocable>();
+            return Ok(taskId);
+        }
     }
 }

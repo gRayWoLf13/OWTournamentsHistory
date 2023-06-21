@@ -2,7 +2,7 @@
 using HtmlAgilityPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OWTournamentsHistory.Api.Utils;
+using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model;
 using OWTournamentsHistory.DataAccess.Contract;
 using System.Text;
@@ -108,7 +108,7 @@ namespace OWTournamentsHistory.Api.Controllers
 
             try
             {
-                await _playerRepository.RemoveAsync(new() { ExternalId = id }, cancellationToken);
+                await _playerRepository.RemoveAsync(id, cancellationToken);
                 return NoContent();
             }
             catch (Exception ex)

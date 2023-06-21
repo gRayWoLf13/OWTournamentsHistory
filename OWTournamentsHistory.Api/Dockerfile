@@ -6,7 +6,7 @@ COPY "OWTournamentsHistory.Api" "/app/Api/OWTournamentsHistory.Api/"
 COPY "OWTournamentsHistory.Contract" "/app/Api/OWTournamentsHistory.Contract/"
 COPY "OWTournamentsHistory.DataAccess" "/app/Api/OWTournamentsHistory.DataAccess/"
 
-RUN dotnet restore "/app/Api/OWTournamentsHistory.Api/OWTournamentsHistory.Api.csproj"
+RUN dotnet restore "/app/Api/OWTournamentsHistory.Api/OWTournamentsHistory.Api.csproj" -v:minimal -warnaserror
 RUN dotnet build "/app/Api/OWTournamentsHistory.Api/OWTournamentsHistory.Api.csproj" -c Release -o "/app/build"
 RUN dotnet publish "/app/Api/OWTournamentsHistory.Api/OWTournamentsHistory.Api.csproj" -c Release -o "/app/publish" /p:UseAppHost=false
 
