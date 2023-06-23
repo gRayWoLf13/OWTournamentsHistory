@@ -2,6 +2,8 @@ using Coravel;
 using Microsoft.IdentityModel.Logging;
 using OWTournamentsHistory.Api;
 using OWTournamentsHistory.Api.DI;
+using OWTournamentsHistory.Api.GrpcServices;
+using OWTournamentsHistory.Api.Services;
 using OWTournamentsHistory.DataAccess.DI;
 using OWTournamentsHistory.Tasks.DI;
 using System.Diagnostics;
@@ -15,6 +17,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddGrpc(x => x.EnableDetailedErrors = true);
 
 builder.AddConfigurations();
 
@@ -36,6 +39,8 @@ builder.Services.AddAutoMapper();
 var app = builder.Build();
 
 app.Services.UseScheduler(SchedulerProfile.SchedulerTasks);
+
+app.MapGrpcService<StatisticsHandlerService>();
 
 app.Services.ConfigureQueue()
     .OnError(e =>

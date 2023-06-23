@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using OWTournamentsHistory.Api.MappingProfiles;
+using OWTournamentsHistory.Api.Services;
 using OWTournamentsHistory.Common.Settings;
 
 namespace OWTournamentsHistory.Api.DI
@@ -8,7 +9,7 @@ namespace OWTournamentsHistory.Api.DI
     {
         public static void AddServices(this IServiceCollection serviceCollection)
         {
-
+            serviceCollection.AddScoped<StatisticsService>();
         }
 
         public static void AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
@@ -47,6 +48,7 @@ namespace OWTournamentsHistory.Api.DI
                 mc.AddProfile(new PlayerMappingProfile());
                 mc.AddProfile(new TeamMappingProfile());
                 mc.AddProfile(new MatchMappingProfile());
+                mc.AddProfile(new GrpcMappingProfile());
             });
 
             services.AddSingleton(mapperConfig.CreateMapper());

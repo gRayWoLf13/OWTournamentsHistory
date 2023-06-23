@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option csharp_namespace = "OWTournamentsHistory.Api.Proto";
+
+package common;
+
+
+message Point2D {
+    oneof x {
+        string x_string = 1;
+        int32 x_int = 2;
+        DecimalValue x_decimal = 3;
+    }
+    optional DecimalValue y = 4;
+}
+
+message Point2DWithLabel {
+      oneof x {
+        string x_string = 1;
+        int32 x_int = 2;
+        DecimalValue x_decimal = 3;
+    }
+    string label = 4;
+    optional DecimalValue y = 5;
+}
+
+
+// Example: 12345.6789 -> { units = 12345, nanos = 678900000 }
+message DecimalValue {
+
+    // Whole units part of the amount
+    int64 units = 1;
+
+    // Nano units of the amount (10^-9)
+    // Must be same sign as units
+    sfixed32 nanos = 2;
+}
