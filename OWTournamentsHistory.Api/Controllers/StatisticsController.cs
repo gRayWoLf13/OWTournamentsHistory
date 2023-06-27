@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OWTournamentsHistory.Api.Controllers.Helpers;
 using OWTournamentsHistory.Api.Services;
 using OWTournamentsHistory.Contract.Model.GeneralTournamentStatistics;
 using OWTournamentsHistory.Contract.Model.PlayerStatistics;
@@ -15,15 +16,15 @@ namespace OWTournamentsHistory.Api.Controllers
 #endif
     public class StatisticsController : Controller
     {
-        StatisticsService _statisticsService;
+        private readonly StatisticsService _statisticsService;
         private readonly ILogger<StatisticsController> _logger;
 
         public StatisticsController(
-            ILogger<StatisticsController> logger,
-            StatisticsService statisticsService)
+            StatisticsService statisticsService,
+            ILogger<StatisticsController> logger)
         {
-            _logger = logger;
             _statisticsService = statisticsService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -33,14 +34,7 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PlayerStatisticsInfo>> GetPlayerStatistics(string name, CancellationToken cancellationToken)
         {
-            try
-            {
-                return await _statisticsService.GetPlayerStatistics(name);
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
+            return await Converters.WrapApiCall(async () => await _statisticsService.GetPlayerStatistics(name));
         }
 
         [HttpGet]
@@ -50,14 +44,7 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GeneralTournamentStatisticsInfo>> GetGeneralTournamentStatistics(CancellationToken cancellationToken)
         {
-            try
-            {
-                return await _statisticsService.GetGeneralTournamentStatisticsInfo();
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
+            return await Converters.WrapApiCall(async () => await _statisticsService.GetGeneralTournamentStatisticsInfo());
         }
 
         [HttpGet]
@@ -67,20 +54,7 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Tournament.TournamentStatisticsInfo>> GetTournamentStatistics(int number, CancellationToken cancellationToken)
         {
-            try
-            {
-                return await _statisticsService.GetTournamentStatistics(number);
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
-        }
-
-        private static ObjectResult WrapException(Exception ex)
-            => new(ex.Message)
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            };
+            return await Converters.WrapApiCall(async () => await _statisticsService.GetTournamentStatistics(number));
+        }      
     }
 }

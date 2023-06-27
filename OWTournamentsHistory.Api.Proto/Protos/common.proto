@@ -35,3 +35,21 @@ message DecimalValue {
     // Must be same sign as units
     sfixed32 nanos = 2;
 }
+
+enum PlayerRole {
+    UNKNOWN_PLAYER_ROLE = 0;
+    FLEX = 1;
+    TANK = 2;
+    DPS = 3;
+    SUPPORT = 4;
+}
+
+enum PlayerSubRole {
+    UNKNOWN_PLAYER_SUB_ROLE = 0;
+    MAIN_TANK = 1;
+    OFF_TANK = 2;
+    HITSCAN_DPS = 3;
+    PROJECTILE_DPS = 4;
+    MAIN_HEAL = 5;
+    LIGHT_HEAL = 6;
+}

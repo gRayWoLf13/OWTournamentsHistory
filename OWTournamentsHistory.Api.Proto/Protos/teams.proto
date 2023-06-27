@@ -1,0 +1,96 @@
+syntax = "proto3";
+
+option csharp_namespace = "OWTournamentsHistory.Api.Proto";
+
+package statistics;
+
+import "google/protobuf/wrappers.proto";
+import "common.proto";
+
+service TeamsHandler {
+    rpc GetMany(TeamsGetManyRequest) returns (TeamsGetManyResponse);
+    rpc Get(TeamsGetRequest) returns (TeamsGetResponse);
+    rpc Add(TeamsAddRequest) returns (TeamsAddResponse);
+    rpc Delete(TeamsDeleteRequest) returns (TeamsDeleteResponse);
+    rpc ImportFromHtml(TeamsImportFromHtmlRequest) returns (TeamsImportFromHtmlResponse);
+    rpc Validate(TeamsValidateRequest) returns (TeamsValidateResponse);
+}
+
+message TeamsGetManyRequest {
+    optional google.protobuf.Int32Value skip = 1;
+    optional google.protobuf.Int32Value limit = 2;
+}
+
+message TeamsGetRequest {
+    int64 id = 1;
+}
+
+message TeamsAddRequest {
+    Team team = 1;
+}
+
+message TeamsDeleteRequest {
+    int64 id = 1;
+}
+
+message TeamsImportFromHtmlRequest {
+    string html = 1;
+}
+
+message TeamsValidateRequest {
+
+}
+
+
+message TeamsGetManyResponse {
+    repeated Team teams = 1;
+}
+
+message TeamsGetResponse {
+    Team team = 1;
+}
+
+message TeamsAddResponse {
+    int64 generated_id = 1;
+}
+
+message TeamsDeleteResponse {
+
+}
+
+message TeamsImportFromHtmlResponse {
+
+}
+
+message TeamsValidateResponse {
+
+}
+
+
+message Team {
+    int64 id = 1;
+    int32 tournament_number = 2;
+    repeated PlayerInfo players = 3;
+    int32 place = 4;
+    string captain_name = 5;
+    int32 matches_played = 6;
+    int32 maps_played = 7;
+    int32 maps_won = 8;
+    optional common.DecimalValue average_matches_close_score = 9;
+    common.DecimalValue win_rate = 10;
+    bool is_champion = 11;
+    common.DecimalValue team_weight = 12;
+
+    message PlayerInfo {
+        string name = 1;
+        string battle_tag = 2;
+        common.PlayerRole player_role = 3;
+        optional common.DecimalValue weight = 4;
+        optional google.protobuf.Int32Value division = 5;
+        optional google.protobuf.StringValue display_weight = 6;
+        optional common.PlayerSubRole sub_role = 7;
+        bool is_new_player = 8;
+        bool is_new_role = 9;
+        common.DecimalValue weight_shift = 10;
+    }
+}

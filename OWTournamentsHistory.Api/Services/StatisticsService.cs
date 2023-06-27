@@ -1,4 +1,5 @@
-﻿using OWTournamentsHistory.Common.Utils;
+﻿using OWTournamentsHistory.Api.Services.Contract.Exceptions;
+using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model.GeneralTournamentStatistics;
 using OWTournamentsHistory.Contract.Model.PlayerStatistics;
 using OWTournamentsHistory.Contract.Model.Type;
@@ -41,7 +42,7 @@ namespace OWTournamentsHistory.Api.Services
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var player = await _playerRepository.FindPlayer(name) ?? throw new Exception("Player not found");
+            var player = await _playerRepository.FindPlayer(name) ?? throw new NotFoundException("Player not found");
             var playerName = player.Name;
             var playerTeams = await _teamRepository.FindTeamsByPlayerName(playerName);
             var playerCaptainsByTournamentNumber = playerTeams.ToDictionary(team => team.TournamentNumber, team => team.CaptainName);
@@ -268,7 +269,7 @@ namespace OWTournamentsHistory.Api.Services
 
             if (!tournamentTeams.Any() && !tournamentMatches.Any())
             {
-                throw new Exception("Player not found");
+                throw new NotFoundException("Tournament not found");
             }
 
             var topTeams = tournamentTeams

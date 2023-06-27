@@ -40,7 +40,7 @@ var app = builder.Build();
 
 app.Services.UseScheduler(SchedulerProfile.SchedulerTasks);
 
-app.MapGrpcService<StatisticsHandlerService>();
+app.AddGrpcServices();
 
 app.Services.ConfigureQueue()
     .OnError(e =>

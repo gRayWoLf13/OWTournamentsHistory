@@ -25,29 +25,11 @@ message GeneralTournamentStatisticsInfoRequest {
 
 }
 
-enum PlayerRole {
-    UNKNOWN_PLAYER_ROLE = 0;
-    FLEX = 1;
-    TANK = 2;
-    DPS = 3;
-    SUPPORT = 4;
-}
-
-enum PlayerSubRole {
-    UNKNOWN_PLAYER_SUB_ROLE = 0;
-    MAIN_TANK = 1;
-    OFF_TANK = 2;
-    HITSCAN_DPS = 3;
-    PROJECTILE_DPS = 4;
-    MAIN_HEAL = 5;
-    LIGHT_HEAL = 6;
-}
-
 message TeamPlayerInfo {
     string name = 1;
     string battle_tag = 2;
-    PlayerRole role = 3;
-    optional PlayerSubRole sub_role = 4;
+    common.PlayerRole role = 3;
+    optional common.PlayerSubRole sub_role = 4;
     optional google.protobuf.Int32Value division = 5;
     optional google.protobuf.StringValue display_weight = 6;        
 }
@@ -73,7 +55,7 @@ message PlayerStatisticsResponse {
     CombinationsData combinations_data = 18;
 
     message RoleInfo {
-        PlayerRole role = 1;
+        common.PlayerRole role = 1;
         int32 tournaments_played = 2;
         optional common.DecimalValue average_win_rate = 3;
         optional google.protobuf.Int32Value last_division = 4;
