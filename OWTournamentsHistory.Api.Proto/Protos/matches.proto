@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+option csharp_namespace = "OWTournamentsHistory.Api.Proto";
+
+package matches;
+
+import "google/protobuf/wrappers.proto";
+import "common.proto";
+
+service MatchesHandler {
+    rpc GetMany(MatchesGetManyRequest) returns (MatchesGetManyResponse);
+    rpc Get(MatchesGetRequest) returns (MatchesGetResponse);
+    rpc Add(MatchesAddRequest) returns (MatchesAddResponse);
+    rpc Delete(MatchesDeleteRequest) returns (MatchesDeleteResponse);
+    rpc ImportFromHtml(MatchesImportFromHtmlRequest) returns (MatchesImportFromHtmlResponse);
+}
+
+message MatchesGetManyRequest {
+    optional google.protobuf.Int32Value skip = 1;
+    optional google.protobuf.Int32Value limit = 2;
+}
+
+message MatchesGetRequest {
+    int64 id = 1;
+}
+
+message MatchesAddRequest {
+    Match match = 1;
+}
+
+message MatchesDeleteRequest {
+    int64 id = 1;
+}
+
+message MatchesImportFromHtmlRequest {
+    string html = 1;
+}
+
+
+message MatchesGetManyResponse {
+    repeated Match matches = 1;
+}
+
+message MatchesGetResponse {
+    Match match = 1;
+}
+
+message MatchesAddResponse {
+    int64 generated_id = 1;
+}
+
+message MatchesDeleteResponse {
+
+}
+
+message MatchesImportFromHtmlResponse {
+
+}
+
+
+message Match {
+    int64 id = 1;
+    int32 tournament_number = 2;
+    int32 match_number = 3;
+    string team_1_captain_name = 4;
+    string team_2_captain_name = 5;
+    int32 score_team_1 = 6;
+    int32 score_team_2 = 7;
+    optional common.DecimalValue closeness = 8;
+    string score = 9;
+    string match_name = 10;
+    optional common.DecimalValue closeness_percent = 11;
+    optional MatchCloseness match_closeness = 12;
+
+    enum MatchCloseness {
+        UNKNOWN = 0;
+        VERY_CLOSE = 1;
+        CLOSE = 2;
+        EQUAL = 3;
+        ONE_SIDE_FAVORITE = 4;
+        ONE_SIDED = 5;
+    }
+}

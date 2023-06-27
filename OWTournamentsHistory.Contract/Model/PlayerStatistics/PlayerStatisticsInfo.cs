@@ -3,7 +3,8 @@
 namespace OWTournamentsHistory.Contract.Model.PlayerStatistics;
 
 public class PlayerStatisticsInfo
-{    public required string Name { get; set; }
+{    
+    public required string Name { get; set; }
     public required ICollection<string> BattleTags { get; set; }
     public required string TwitchId { get; set; }
     public int TournamentsPlayed { get; set; }

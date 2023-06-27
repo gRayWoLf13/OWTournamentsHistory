@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OWTournamentsHistory.UI", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OWTournamentsHistory.Common", "OWTournamentsHistory.Common\OWTournamentsHistory.Common.csproj", "{22185761-A7A5-46D9-80D9-B53DB74D70D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OWTournamentsHistory.Test", "OWTournamentsHistory.Tests\OWTournamentsHistory.Test.csproj", "{D4874BA0-BC15-46FA-BCFE-8676428EFB43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OWTournamentsHistory.Test", "OWTournamentsHistory.Tests\OWTournamentsHistory.Test.csproj", "{D4874BA0-BC15-46FA-BCFE-8676428EFB43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OWTournamentsHistory.Api.Proto", "OWTournamentsHistory.Api.Proto\OWTournamentsHistory.Api.Proto.csproj", "{81D8D820-89C2-4BF2-ADF7-0CDA13DC202E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{D4874BA0-BC15-46FA-BCFE-8676428EFB43}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4874BA0-BC15-46FA-BCFE-8676428EFB43}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4874BA0-BC15-46FA-BCFE-8676428EFB43}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81D8D820-89C2-4BF2-ADF7-0CDA13DC202E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81D8D820-89C2-4BF2-ADF7-0CDA13DC202E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81D8D820-89C2-4BF2-ADF7-0CDA13DC202E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81D8D820-89C2-4BF2-ADF7-0CDA13DC202E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

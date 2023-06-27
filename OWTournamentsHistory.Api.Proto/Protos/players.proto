@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+option csharp_namespace = "OWTournamentsHistory.Api.Proto";
+
+package players;
+
+import "google/protobuf/wrappers.proto";
+import "common.proto";
+
+service PlayersHandler {
+    rpc GetMany(PlayersGetManyRequest) returns (PlayersGetManyResponse);
+    rpc Get(PlayersGetRequest) returns (PlayersGetResponse);
+    rpc Add(PlayersAddRequest) returns (PlayersAddResponse);
+    rpc Delete(PlayersDeleteRequest) returns (PlayersDeleteResponse);
+    rpc ImportFromHtml(PlayersImportFromHtmlRequest) returns (PlayersImportFromHtmlResponse);
+}
+
+
+message PlayersGetManyRequest {
+    optional google.protobuf.Int32Value skip = 1;
+    optional google.protobuf.Int32Value limit = 2;
+}
+
+message PlayersGetRequest {
+    int64 id = 1;
+}
+
+message PlayersAddRequest {
+    Player player = 1;
+}
+
+message PlayersDeleteRequest {
+    int64 id = 1;
+}
+
+message PlayersImportFromHtmlRequest {
+    string html = 1;
+}
+
+
+message PlayersGetManyResponse {
+    repeated Player players = 1;
+}
+
+message PlayersGetResponse {
+    Player player = 1;
+}
+
+message PlayersAddResponse {
+    int64 generated_id = 1;
+}
+
+message PlayersDeleteResponse {
+
+}
+
+message PlayersImportFromHtmlResponse {
+
+}
+
+message Player {
+    int64 id = 1;
+    string name = 2;
+    repeated string battle_tags = 3;
+    string twitch_id = 4;
+}

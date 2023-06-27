@@ -23,6 +23,7 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Duende.IdentityServer" Version="6.3.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.54.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="7.0.4" />
@@ -37,7 +38,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\" />
+    <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\common.proto" GrpcServices="Server">
+      <Link>Protos\common.proto</Link>
+    </Protobuf>
+    <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\matches.proto" GrpcServices="Server">
+      <Link>Protos\matches.proto</Link>
+    </Protobuf>
+    <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\players.proto" GrpcServices="Server">
+      <Link>Protos\players.proto</Link>
+    </Protobuf>
+    <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\statistics.proto" GrpcServices="Server">
+      <Link>Protos\statistics.proto</Link>
+    </Protobuf>
+    <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\teams.proto" GrpcServices="Server">
+      <Link>Protos\teams.proto</Link>
+    </Protobuf>
   </ItemGroup>
 
 </Project>

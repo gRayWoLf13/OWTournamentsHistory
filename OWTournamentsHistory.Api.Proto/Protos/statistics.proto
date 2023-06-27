@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+option csharp_namespace = "OWTournamentsHistory.Api.Proto";
+
+package statistics;
+
+import "google/protobuf/wrappers.proto";
+import "common.proto";
+
+service TournamentStatisticsHandler {
+    rpc GetPlayerStatistics(PlayerStatisticsRequest) returns (PlayerStatisticsResponse);
+    rpc GetTournamentStatistics(TournamentStatisticsRequest) returns (TournamentStatisticsResponse);
+    rpc GetGeneralTournamentStatistics(GeneralTournamentStatisticsInfoRequest) returns (GeneralTournamentStatisticsInfoResponse);
+}
+
+message PlayerStatisticsRequest {
+    string name = 1;
+}
+
+message TournamentStatisticsRequest {
+    int32 tournament_number = 1;
+}
+
+message GeneralTournamentStatisticsInfoRequest {
+
+}
+
+message TeamPlayerInfo {
+    string name = 1;
+    string battle_tag = 2;
+    common.PlayerRole role = 3;
+    optional common.PlayerSubRole sub_role = 4;
+    optional google.protobuf.Int32Value division = 5;
+    optional google.protobuf.StringValue display_weight = 6;        
+}
+
+message PlayerStatisticsResponse {
+    string name = 1;
+    repeated string battle_tags = 2;
+    string twitch_id = 3;
+    int32 tournaments_played = 4;
+    int32 tournaments_won = 5;
+    int32 tournaments_with_0_wins = 6;
+    common.DecimalValue global_win_rate = 7;
+    int32 best_result_place = 8;
+    int32 best_result_tournament_number = 9;
+    string best_result_captain_name = 10;
+    optional common.DecimalValue average_closeness = 11;
+    int32 maps_won = 12;
+    int32 maps_played = 13;
+    int32 average_place = 14;
+    repeated RoleInfo role_infos = 15;
+    repeated TeamInfo teams = 16;
+    ChartsData charts_data = 17;
+    CombinationsData combinations_data = 18;
+
+    message RoleInfo {
+        common.PlayerRole role = 1;
+        int32 tournaments_played = 2;
+        optional common.DecimalValue average_win_rate = 3;
+        optional google.protobuf.Int32Value last_division = 4;
+        optional google.protobuf.StringValue last_display_weight = 5;
+    }
+
+    message TeamInfo {
+        string captain_name = 1;
+        int32 tournament_number = 2;
+        int32 place = 3;
+        int32 maps_won = 4;
+        int32 maps_played = 5;
+        int32 matches_played = 6;
+        optional common.DecimalValue average_matches_close_score = 7;
+        repeated TeamPlayerInfo team_members = 8;
+        repeated MatchInfo team_matches = 9;
+        common.DecimalValue win_rate = 10;
+
+        message MatchInfo {
+            string captain_team_1 = 1;
+            string captain_team_2 = 2;
+            int32 score_team_1 = 3;
+            int32 score_team_2 = 4;
+            optional common.DecimalValue closeness = 5;
+            string score = 6;
+            string match_name = 7;
+        }
+    }
+
+    message ChartsData {
+        repeated common.Point2D tank_price_data = 1;
+        repeated common.Point2D dps_price_data = 2;
+        repeated common.Point2D support_price_data = 3;
+        repeated common.Point2D place_data = 4;
+        repeated common.Point2DWithLabel standard_deviation = 5;
+    }
+
+    message CombinationsData {
+        repeated NameCount most_wins_against = 1;
+        repeated NameCount most_losses_againts = 2;
+        repeated NameCount most_knockouts_to = 3;
+        repeated NameCount most_knockouts_from = 4;
+    
+        message NameCount {
+            string name = 1;
+            int32 count = 2;
+        }
+    }
+}
+
+message TournamentStatisticsResponse {
+    int32 tournament_number = 1;
+    int32 teams_count = 2;
+    int32 players_count = 3;
+    int32 matches_count = 4;
+    int32 maps_played = 5;
+    int32 new_players = 6;
+    int32 new_role_players = 7;
+    repeated TeamInfo top_teams = 8;
+    TeamStats winner_team = 9;
+    ChartsData charts_data = 10;
+
+    message TeamInfo {
+        int32 place = 1;
+        string captain_name = 2;
+    }
+
+    message TeamStats {
+        repeated TeamPlayerInfo players = 1;
+        optional common.DecimalValue average_matches_close_score = 2;
+        optional common.DecimalValue total_average_matches_close_score = 3;
+        common.DecimalValue win_rate = 4;
+        common.DecimalValue total_win_rate = 5;
+        common.DecimalValue team_weight = 6;
+        common.DecimalValue total_team_weight = 7;
+        int32 matches_played = 8;
+    }
+
+    message ChartsData {
+        repeated common.Point2DWithLabel matches_closeness_relative_to_average = 1;
+        repeated common.Point2D players_to_divisions = 2;
+        repeated common.Point2D global_players_to_divisions = 3;
+    }
+}
+
+message GeneralTournamentStatisticsInfoResponse {
+    int32 tournaments_count = 1;
+    int32 teams_count = 2;
+    int32 players_count = 3;
+    int32 matches_count = 4;
+    int32 owals_count = 5;
+    int32 champions_count = 6;
+    ChartsData charts_data = 7;
+    OtherStats other_stats = 8;
+
+   message ChartsData {
+       repeated common.Point2D players_count_to_tournament = 1;
+       repeated common.Point2D average_team_weight_to_tournament = 2;
+       repeated common.Point2D average_match_closeness_to_tournament = 3;
+
+       repeated common.Point2D average_tank_division_to_tournament = 4;
+       repeated common.Point2D average_dps_division_to_tournament = 5;
+       repeated common.Point2D average_support_division_to_tournament = 6;
+
+       repeated common.Point2D tank_players_to_division = 7;
+       repeated common.Point2D dps_players_to_division = 8;
+       repeated common.Point2D support_players_to_division = 9;
+   }
+
+   message OtherStats {
+       repeated common.Point2D top_maps_won = 1;
+       repeated common.Point2DWithLabel top_champions = 2;
+       repeated common.Point2D top_win_rate = 3;
+       repeated common.Point2DWithLabel top_0_wins = 4;
+       repeated common.Point2D best_duos = 5;
+       repeated common.Point2D worst_duos = 6;
+   }
+}
