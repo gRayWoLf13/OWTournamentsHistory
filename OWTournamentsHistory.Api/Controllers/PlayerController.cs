@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
-using HtmlAgilityPack;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OWTournamentsHistory.Common.Utils;
+using OWTournamentsHistory.Api.Controllers.Helpers;
+using OWTournamentsHistory.Api.Services;
 using OWTournamentsHistory.Contract.Model;
-using OWTournamentsHistory.DataAccess.Contract;
 using System.Text;
-using DA = OWTournamentsHistory.DataAccess.Model;
 
 namespace OWTournamentsHistory.Api.Controllers
 {
@@ -18,14 +16,12 @@ namespace OWTournamentsHistory.Api.Controllers
 #endif
     public class PlayerController : Controller
     {
-        private readonly IMapper _mapper;
-        private readonly IPlayerRepository _playerRepository;
+        private readonly PlayersService _playersService;
         private readonly ILogger<PlayerController> _logger;
 
-        public PlayerController(IMapper mapper, IPlayerRepository playerRepository, ILogger<PlayerController> logger)
+        public PlayerController(IMapper mapper, ILogger<PlayerController> logger, PlayersService playersService)
         {
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _playerRepository = playerRepository ?? throw new ArgumentNullException(nameof(playerRepository));
+            _playersService = playersService ?? throw new ArgumentNullException(nameof(playersService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -36,20 +32,7 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IReadOnlyCollection<Player>>> GetMany([FromQuery] int? skip = null, [FromQuery] int? limit = null, CancellationToken cancellationToken = default)
         {
-            if (skip < 0 || limit < 0)
-            {
-                return BadRequest();
-            }
-            try
-            {
-                var results = await _playerRepository.GetSortedAsync(p => p.ExternalId, skip: skip, limit: limit, cancellationToken: cancellationToken);
-
-                return results.Select(_mapper.Map<Player>).ToArray();
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
+            return await Converters.WrapApiCall(async () => await _playersService.GetMany(skip, limit, cancellationToken));
         }
 
         [HttpGet]
@@ -60,21 +43,7 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<Player>> Get(int id, CancellationToken cancellationToken)
         {
-            if (id < 0)
-            {
-                return NotFound();
-            }
-
-            try
-            {
-                var result = await _playerRepository.GetAsync(id, cancellationToken);
-
-                return _mapper.Map<Player>(result);
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
+            return await Converters.WrapApiCall(async () => await _playersService.Get(id, cancellationToken));
         }
 
         [HttpPut]
@@ -83,15 +52,8 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> Add([FromBody] Player player, CancellationToken cancellationToken)
         {
-            try
-            {
-                var generatedId = await _playerRepository.AddAsync(_mapper.Map<DA.Player>(player), cancellationToken);
-                return CreatedAtAction(nameof(Get), new { id = generatedId }, null);
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
+            var generatedId = await Converters.WrapApiCall(async () => await _playersService.Add(player, cancellationToken));
+            return CreatedAtAction(nameof(Get), new { id = generatedId }, null);
         }
 
         [HttpDelete]
@@ -101,20 +63,7 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> Delete(long id, CancellationToken cancellationToken)
         {
-            if (id < 0)
-            {
-                return NotFound();
-            }
-
-            try
-            {
-                await _playerRepository.RemoveAsync(id, cancellationToken);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
+            return await Converters.WrapApiCall(async () => await _playersService.Delete(id, cancellationToken));
         }
 
         [HttpPut]
@@ -123,49 +72,13 @@ namespace OWTournamentsHistory.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> ImportFromHtml(CancellationToken cancellationToken)
         {
-            try
+            string html;
+            using (var streamReader = new StreamReader(Request.Body, Encoding.UTF8))
             {
-                string html;
-                using (var streamReader = new StreamReader(Request.Body, Encoding.UTF8))
-                {
-                    html = await streamReader.ReadToEndAsync(cancellationToken);
-                }
-                var doc = new HtmlDocument();
-                doc.LoadHtml(html);
-                var parsedData = doc.DocumentNode
-                    .SelectNodes("/div/table/tbody/tr")
-                    .Skip(1)
-                    .Select(node => new
-                    {
-                        twitch = string.IsNullOrEmpty(node.SelectSingleNode("td[5]").InnerText) ? node.SelectSingleNode("td[2]").InnerText.Replace(" ", "").Replace(Environment.NewLine, "") : node.SelectSingleNode("td[5]").InnerText,
-                        externalId1 = node.SelectSingleNode("td[1]").InnerText,
-                        externalId2 = node.SelectSingleNode("td[4]").InnerText,
-                        btag = node.SelectSingleNode("td[2]").InnerText.Replace(" ", "").Replace(Environment.NewLine, "")
-                    })
-                    .GroupBy(data => data.twitch)
-                    .Select(data => new DA.Player
-                    {
-                        Name = NameExtensions.GetName(data.Select(item => item.btag).First()),
-                        TwitchId = data.Key,
-                        ExternalId = long.Parse(data.First().externalId1),
-                        BattleTags = data.Select(item => item.btag).Distinct().ToArray()
-                    })
-                    .ToArray();
+                html = await streamReader.ReadToEndAsync(cancellationToken);
+            }
 
-                await _playerRepository.AddRangeAsync(parsedData, cancellationToken);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return WrapException(ex);
-            }
+            return await Converters.WrapApiCall(async () => await _playersService.ImportFromHtml(html, cancellationToken));
         }
-
-
-        private static ObjectResult WrapException(Exception ex)
-            => new(ex.Message)
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            };
     }
 }

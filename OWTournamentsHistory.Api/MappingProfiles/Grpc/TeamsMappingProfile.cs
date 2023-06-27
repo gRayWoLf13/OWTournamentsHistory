@@ -19,9 +19,9 @@ namespace OWTournamentsHistory.Api.MappingProfiles.Grpc
             CreateMap<Team, ApiModel.Team>();
         }
 
-        private void ConvertTeamPlayers(ApiModel.Team info, Team result)
+        private void ConvertTeamPlayers(ApiModel.Team source, Team result)
         {
-            result.Players.AddRange(info.Players.Select(ConvertPlayerInfo));
+            result.Players.AddRange(source.Players.Select(ConvertPlayerInfo));
         }
 
         private Team.Types.PlayerInfo ConvertPlayerInfo(ApiModel.TeamPlayerInfo info) =>

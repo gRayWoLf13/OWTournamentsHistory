@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using HtmlAgilityPack;
-using OWTournamentsHistory.Api.Services.Contract.Exceptions;
 using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model;
 using OWTournamentsHistory.DataAccess.Contract;
@@ -9,55 +8,17 @@ using DAType = OWTournamentsHistory.DataAccess.Model.Type;
 
 namespace OWTournamentsHistory.Api.Services
 {
-    public class TeamsService
+    public class TeamsService : ControllerServiceBase<Team, DA.Team>
     {
         private readonly IMapper _mapper;
-        private readonly ITeamRepository _teamRepository;
         private readonly IPlayerRepository _playerRepository;
 
-        public TeamsService(IMapper mapper, ITeamRepository teamRepository, IPlayerRepository playerRepository)
+        public TeamsService(IMapper mapper, ITeamRepository teamRepository, IPlayerRepository playerRepository) : base(mapper, teamRepository)
         {
-            _mapper = mapper;
-            _teamRepository = teamRepository;
             _playerRepository = playerRepository;
         }
 
-        public async Task<IReadOnlyCollection<Team>> GetMany(int? skip = null, int? limit = null, CancellationToken cancellationToken = default)
-        {
-            if (skip < 0 || limit < 0)
-            {
-                throw new InvalidParametersException();
-            }
-            var results = await _teamRepository.GetSortedAsync(p => p.ExternalId, skip: skip, limit: limit, cancellationToken: cancellationToken);
-            return results.Select(_mapper.Map<Team>).ToArray();
-        }
-
-        public async Task<Team> Get(long id, CancellationToken cancellationToken)
-        {
-            if (id < 0)
-            {
-                throw new NotFoundException($"Team (id:{id}) was not found");
-            }
-            var result = await _teamRepository.GetAsync(id, cancellationToken);
-            return _mapper.Map<Team>(result);
-        }
-
-        public async Task<long> Add(Team team, CancellationToken cancellationToken)
-        {
-            var generatedId = await _teamRepository.AddAsync(_mapper.Map<DA.Team>(team), cancellationToken);
-            return generatedId;
-        }
-
-        public async Task Delete(long id, CancellationToken cancellationToken)
-        {
-            if (id < 0)
-            {
-                throw new NotFoundException($"Team (id:{id}) was not found");
-            }
-            await _teamRepository.RemoveAsync(id, cancellationToken);
-        }
-
-        public async Task ImportFromHtml(string html, CancellationToken cancellationToken)
+        public override async Task ImportFromHtml(string html, CancellationToken cancellationToken)
         {
             var allPlayers = await _playerRepository.GetAsync(cancellationToken);
 
@@ -125,14 +86,14 @@ namespace OWTournamentsHistory.Api.Services
                })
                .ToArray();
 
-            await _teamRepository.AddRangeAsync(parsedData, cancellationToken);
+            await _repository.AddRangeAsync(parsedData, cancellationToken);
         }
 
         public async Task ValidateTeams(CancellationToken cancellationToken)
         {
             var existingPlayers = (await _playerRepository.GetAsync(cancellationToken)).Select(player => player.Name).ToArray();
             var existingBtags = (await _playerRepository.GetAsync(cancellationToken)).SelectMany(player => player.BattleTags).Select(NameExtensions.GetName).ToArray();
-            var teamPlayers = (await _teamRepository.GetAsync(cancellationToken)).SelectMany(t => t.Players).Select(player => player.Name).Distinct().ToArray();
+            var teamPlayers = (await _repository.GetAsync(cancellationToken)).SelectMany(t => t.Players).Select(player => player.Name).Distinct().ToArray();
 
             var missingPlayers = teamPlayers.Except(existingPlayers).ToArray();
             var playersMissingInTeam = existingPlayers.Except(teamPlayers).ToArray();
@@ -161,6 +122,5 @@ namespace OWTournamentsHistory.Api.Services
               "light heal" => DAType.TeamPlayerSubRole.LightHeal,
               _ => throw new Exception($"Unexpected TeamPlayerSubRole: {role}")
           };
-
     }
 }

@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using HtmlAgilityPack;
-using OWTournamentsHistory.Api.Services.Contract.Exceptions;
 using OWTournamentsHistory.Common.Utils;
 using OWTournamentsHistory.Contract.Model;
 using OWTournamentsHistory.DataAccess.Contract;
@@ -8,54 +7,13 @@ using DA = OWTournamentsHistory.DataAccess.Model;
 
 namespace OWTournamentsHistory.Api.Services
 {
-    public class MatchesService
+    public class MatchesService : ControllerServiceBase<Match, DA.Match>
     {
-        private readonly IMapper _mapper;
-        private readonly IMatchRepository _matchRepository;
-
-        public MatchesService(IMapper mapper, IMatchRepository matchRepository)
+        public MatchesService(IMapper mapper, IMatchRepository matchRepository) : base(mapper, matchRepository)
         {
-            _mapper = mapper;
-            _matchRepository = matchRepository;
         }
 
-        public async Task<IReadOnlyCollection<Match>> GetMany(int? skip = null, int? limit = null, CancellationToken cancellationToken = default)
-        {
-            if (skip < 0 || limit < 0)
-            {
-                throw new InvalidParametersException();
-            }
-            var results = await _matchRepository.GetSortedAsync(p => p.ExternalId, skip: skip, limit: limit, cancellationToken: cancellationToken);
-
-            return results.Select(_mapper.Map<Match>).ToArray();
-        }
-
-        public async Task<Match> Get(long id, CancellationToken cancellationToken)
-        {
-            if (id < 0)
-            {
-                throw new NotFoundException($"Match (id:{id}) was not found");
-            }
-            var result = await _matchRepository.GetAsync(id, cancellationToken);
-            return _mapper.Map<Match>(result);
-        }
-
-        public async Task<long> Add(Match match, CancellationToken cancellationToken)
-        {
-            var generatedId = await _matchRepository.AddAsync(_mapper.Map<DA.Match>(match), cancellationToken);
-            return generatedId;
-        }
-
-        public async Task Delete(long id, CancellationToken cancellationToken)
-        {
-            if (id < 0)
-            {
-                throw new NotFoundException($"Match (id:{id}) was not found");
-            }
-            await _matchRepository.RemoveAsync(id, cancellationToken);
-        }
-
-        public async Task ImportFromHtml(string html, CancellationToken cancellationToken)
+        public override async Task ImportFromHtml(string html, CancellationToken cancellationToken)
         {
             var doc = new HtmlDocument();
             doc.LoadHtml(html);
@@ -77,7 +35,7 @@ namespace OWTournamentsHistory.Api.Services
                 .Select(m => m.First())
                 .ToArray();
 
-            await _matchRepository.AddRangeAsync(parsedData, cancellationToken);
+            await _repository.AddRangeAsync(parsedData, cancellationToken);
         }
     }
 }

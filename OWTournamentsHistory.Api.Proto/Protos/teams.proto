@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option csharp_namespace = "OWTournamentsHistory.Api.Proto";
 
-package statistics;
+package teams;
 
 import "google/protobuf/wrappers.proto";
 import "common.proto";

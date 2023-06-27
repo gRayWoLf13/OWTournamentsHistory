@@ -20,7 +20,7 @@ namespace OWTournamentsHistory.Api.Controllers
 
         public MatchController(MatchesService matchesService, ILogger<MatchController> logger)
         {
-            _matchesService = matchesService;
+            _matchesService = matchesService ?? throw new ArgumentNullException(nameof(matchesService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
