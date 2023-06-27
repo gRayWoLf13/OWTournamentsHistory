@@ -50,6 +50,28 @@ namespace OWTournamentsHistory.Api.MappingProfiles.Helpers
             _ => throw new ArgumentException($"Unexpected {typeof(GrpcModel.PlayerSubRole)} value: {value}")
         };
 
+        public static Match.Types.MatchCloseness ToGrpcModel(this MatchCloseness? value) => value switch
+        {
+            MatchCloseness.Equal => Match.Types.MatchCloseness.Equal,
+            MatchCloseness.VeryClose => Match.Types.MatchCloseness.VeryClose,
+            MatchCloseness.Close => Match.Types.MatchCloseness.Close,
+            MatchCloseness.OneSideFavorite => Match.Types.MatchCloseness.OneSideFavorite,
+            MatchCloseness.OneSided => Match.Types.MatchCloseness.OneSided,
+            null => Match.Types.MatchCloseness.Unknown,
+            _ => throw new ArgumentException($"Unexpected {typeof(MatchCloseness)} value: {value}")
+        };
+
+        public static MatchCloseness? FromGrpcModel(this Match.Types.MatchCloseness value) => value switch
+        {
+            Match.Types.MatchCloseness.Equal => MatchCloseness.Equal,
+            Match.Types.MatchCloseness.VeryClose => MatchCloseness.VeryClose,
+            Match.Types.MatchCloseness.Close => MatchCloseness.Close,
+            Match.Types.MatchCloseness.OneSideFavorite => MatchCloseness.OneSideFavorite,
+            Match.Types.MatchCloseness.OneSided => MatchCloseness.OneSided,
+            Match.Types.MatchCloseness.Unknown => null,
+            _ => throw new ArgumentException($"Unexpected {typeof(Match.Types.MatchCloseness)} value: {value}")
+        };
+
         public static Point2D ToGrpcModel<T>(this Point2D<T> source)
         {
             var result = new Point2D { Y = source.Y };

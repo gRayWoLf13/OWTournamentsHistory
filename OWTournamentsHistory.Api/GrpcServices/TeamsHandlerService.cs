@@ -10,9 +10,9 @@ namespace OWTournamentsHistory.Api.GrpcServices
     {
         private readonly TeamsService _teamsService;
         private readonly IMapper _mapper;
-        private readonly ILogger<StatisticsHandlerService> _logger;
+        private readonly ILogger<TeamsHandlerService> _logger;
 
-        public TeamsHandlerService(TeamsService teamsService, IMapper mapper, ILogger<StatisticsHandlerService> logger)
+        public TeamsHandlerService(TeamsService teamsService, IMapper mapper, ILogger<TeamsHandlerService> logger)
         {
             _teamsService = teamsService;
             _mapper = mapper;

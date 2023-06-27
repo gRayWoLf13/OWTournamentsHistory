@@ -36,7 +36,7 @@ namespace OWTournamentsHistory.Api.Services
         {
             if (id < 0)
             {
-                throw new NotFoundException($"Match (id:{id}) was not found");
+                throw new NotFoundException($"Team (id:{id}) was not found");
             }
             var result = await _teamRepository.GetAsync(id, cancellationToken);
             return _mapper.Map<Team>(result);
@@ -52,7 +52,7 @@ namespace OWTournamentsHistory.Api.Services
         {
             if (id < 0)
             {
-                throw new NotFoundException($"Match (id:{id}) was not found");
+                throw new NotFoundException($"Team (id:{id}) was not found");
             }
             await _teamRepository.RemoveAsync(id, cancellationToken);
         }

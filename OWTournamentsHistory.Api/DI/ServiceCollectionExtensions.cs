@@ -13,12 +13,14 @@ namespace OWTournamentsHistory.Api.DI
         {
             serviceCollection.AddScoped<StatisticsService>();
             serviceCollection.AddScoped<TeamsService>();
+            serviceCollection.AddScoped<MatchesService>();
         }
 
         public static void AddGrpcServices(this WebApplication? app)
         {
             app!.MapGrpcService<StatisticsHandlerService>();
             app!.MapGrpcService<TeamsHandlerService>();
+            app!.MapGrpcService<MatchesHandlerService>();
         }
 
         public static void AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
@@ -59,6 +61,7 @@ namespace OWTournamentsHistory.Api.DI
                 mc.AddProfile(new MatchMappingProfile());
                 mc.AddProfile(new StatisticsMappingProfile());
                 mc.AddProfile(new TeamsMappingProfile());
+                mc.AddProfile(new MatchesMappingProfile());
             });
 
             services.AddSingleton(mapperConfig.CreateMapper());

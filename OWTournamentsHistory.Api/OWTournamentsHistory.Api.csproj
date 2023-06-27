@@ -41,6 +41,9 @@
     <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\common.proto" GrpcServices="Server">
       <Link>Protos\common.proto</Link>
     </Protobuf>
+    <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\matches.proto" GrpcServices="Server">
+      <Link>Protos\matches.proto</Link>
+    </Protobuf>
     <Protobuf Include="..\OWTournamentsHistory.Api.Proto\Protos\statistics.proto" GrpcServices="Server">
       <Link>Protos\statistics.proto</Link>
     </Protobuf>
